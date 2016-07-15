@@ -1,5 +1,9 @@
-ailoads-demo
+ailoads-syncstorage
 ====================
+
+Converting loadsv1 tests to loadsv2
+These tests are under construction!
+Do not use.
 
 Overview
 ------------
