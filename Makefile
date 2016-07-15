@@ -1,25 +1,23 @@
 OS := $(shell uname)
 HERE = $(shell pwd)
-PYTHON = python3
+PYTHON = python
 #PYTHON = $(shell python3.4)
 #PYTHON = '/usr/local/Cellar/python3/3.4.2_1/bin/python3'
 VTENV_OPTS = --python $(PYTHON)
 
 BIN = $(HERE)/venv/bin
-VENV_PIP = $(BIN)/pip3
+VENV_PIP = $(BIN)/pip
 VENV_PYTHON = $(BIN)/python
 INSTALL = $(VENV_PIP) install
 
-LOOP_SERVER_URL = https://loop.stage.mozaws.net
-#FXA_EXISTING_EMAIL = tryfmdstage@mailinator.com
-FXA_EXISTING_EMAIL = ailoads-bitchin@mailinator.com
+SYNCSTORAGE_SERVER_URL = https://token.stage.mozaws.net
 
 .PHONY: all check-os install-elcapitan install build
-.PHONY: setup_random setup_existing configure 
+.PHONY: setup configure 
 .PHONY: docker-build docker-run docker-export
 .PHONY: test test-heavy refresh clean
 
-all: build setup_random configure 
+all: build setup configure 
 
 
 # hack for OpenSSL problems on OS X El Captain: 
@@ -50,32 +48,30 @@ clean-env:
 	@rm -f loadtest.env
 	
 
-setup_random: clean-env
-	$(BIN)/fxa-client -c --browserid --prefix loop-server --audience $(LOOP_SERVER_URL) --out loadtest.env --duration 3600
+setup: clean-env
+	$(BIN)/fxa-client -c --browserid --prefix syncstorage-server --audience $(SYNCSTORAGE_SERVER_URL) --out loadtest.env --duration 3600
 
-setup_existing: clean-env
-	$(BIN)/fxa-client --browserid --auth "$(FXA_EXISTING_EMAIL)" --account-server https://api.accounts.firefox.com/v1 --audience $(LOOP_SERVER_URL) --out loadtest.env --duration 3600
 
 configure: build
-	@bash loop.tpl
+	@bash syncstorage.tpl
 
 
 test: build loadtest.env
-	bash -c "source loadtest.env && LOOP_SERVER_URL=$(LOOP_SERVER_URL):443 $(BIN)/ailoads -v -d 30"
+	bash -c "source loadtest.env && SYNCSTORAGE_SERVER_URL=$(SYNCSTORAGE_SERVER_URL):443 $(BIN)/ailoads -v -d 30"
 	$(BIN)/flake8 loadtest.py
 
 test-heavy: build loadtest.env
-	bash -c "source loadtest.env && LOOP_SERVER_URL=$(LOOP_SERVER_URL):443 $(BIN)/ailoads -v -d 300 -u 10"
+	bash -c "source loadtest.env && SYNCSTORAGE_SERVER_URL=$(SYNCSTORAGE_SERVER_URL):443 $(BIN)/ailoads -v -d 300 -u 10"
 
 
 docker-build:
-	docker build -t loop/loadtest .
+	docker build -t syncstorage/loadtest .
 
 docker-run: loadtest.env
-	bash -c "source loadtest.env; docker run -e LOOP_DURATION=30 -e LOOP_NB_USERS=4 -e FXA_BROWSERID_ASSERTION=\$${FXA_BROWSERID_ASSERTION} loop/loadtest"
+	bash -c "source loadtest.env; docker run -e SYNCSTORAGE_DURATION=30 -e SYNCSTORAGE_NB_USERS=4 -e FXA_BROWSERID_ASSERTION=\$${FXA_BROWSERID_ASSERTION} syncstorage/loadtest"
 
 docker-export:
-	docker save "loop/loadtest:latest" | bzip2> loop-latest.tar.bz2
+	docker save "syncstorage/loadtest:latest" | bzip2> syncstorage-latest.tar.bz2
 
 
 clean: refresh

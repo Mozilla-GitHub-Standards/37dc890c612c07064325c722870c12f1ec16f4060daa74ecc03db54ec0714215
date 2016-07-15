@@ -11,6 +11,7 @@ import random
 import json
 import time
 from urlparse import urlparse, urlunparse
+from six import test_type
 
 import tokenlib
 import hawkauthlib
@@ -18,7 +19,8 @@ import browserid.jwt
 import browserid.tests.support
 import requests.auth
 
-from loads import TestCase
+#from loads import TestCase
+from ailoads.fmwk import scenario, requests
 
 
 # Assertions are good for one year (in seconds).
